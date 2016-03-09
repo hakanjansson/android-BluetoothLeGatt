@@ -290,6 +290,7 @@ public class BluetoothLeService extends Service {
      */
     public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic,
                                               boolean enabled) {
+        int writeType;
         if (mBluetoothAdapter == null || mBluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
@@ -298,12 +299,18 @@ public class BluetoothLeService extends Service {
 
         BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
                 UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
+        writeType = characteristic.getWriteType();
+        // Workaround for Issue 150933:
+        // "BluetoothGatt.writeDescriptor uses the corresponding characteristic's write type"
+        // https://code.google.com/p/android/issues/detail?id=150933
+        characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
         if (enabled) {
             descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
         } else {
             descriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
         }
         mBluetoothGatt.writeDescriptor(descriptor);
+        characteristic.setWriteType(writeType);
     }
 
     /**
